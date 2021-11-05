@@ -26,6 +26,9 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		serveApp(w, r, db)
 	})
+	http.HandleFunc("/styles.css", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "styles.css")
+	})
 	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
