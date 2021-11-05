@@ -23,7 +23,7 @@ in buildGoModule {
     description = description;
     homepage = homepage;
     license = licenses.mit;
-    maintainers = [ maintainers.sdaros ];
+    # maintainers = [ maintainers.sdaros ];
     platforms = platforms.linux;
   };
 }
