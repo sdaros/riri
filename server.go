@@ -23,10 +23,11 @@ func main() {
 		log.Fatal("BoltDB: ", err)
 	}
 	defer db.Close()
-	http.HandleFunc("/styles.css", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "styles.css")
-	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/styles.css" {
+			http.ServeFile(w, r, "styles.css")
+			return
+		}
 		serveApp(w, r, db)
 	})
 	err = http.ListenAndServe(*addr, nil)
