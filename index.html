@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Einkauf App" />
+  <meta name="apple-mobile-web-app-title" content="Einkauf App" />
+  <title>URL Sharing App</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <style type="text/css">
+  </style>
+
+</head>
+
+<body>
+  <div class="pa4-l">
+  <form class="bg-light-red mw7 center pa4 br2-ns ba b--black-10" action="/" method="post">
+    <fieldset class="cf bn ma0 pa0">
+      <legend class="pa0 f5 f4-ns mb3 black-80">Save your URL in the form field below</legend>
+      <div class="cf">
+        <label class="clip" for="urls">URLs to save</label>
+        <input class="f6 f5-l input-reset bn fl black-80 bg-white pa3 lh-solid w-100 w-75-m w-80-l br2-ns br--left-ns" placeholder="URLs to save" type="url" name="urls" value="{{.}}" id="urls">
+        <input class="f6 f5-l button-reset fl pv3 tc bn bg-animate bg-black-70 hover-bg-black white pointer w-100 w-25-m w-20-l br2-ns br--right-ns" type="submit" value="Save">
+      </div>
+    </fieldset>
+  </form>
+</div>
+</body>
+
+</html>
