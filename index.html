@@ -31,7 +31,7 @@
 </div>
 <script type="text/javascript">
  function copyToClipboard() {
-  navigator.clipboard.writeText("<empty clipboard>").then(function() {
+  navigator.clipboard.writeText("{{.}}").then(function() {
       console.log("copy success")
   }, function(e) {
       console.error("copy failed: ", e)
