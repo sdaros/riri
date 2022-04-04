@@ -6,38 +6,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="application-name" content="URL Sharing App" />
-  <meta name="apple-mobile-web-app-title" content="URL Sharing App" />
-  <title>URL Sharing App</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css"/>
+  <meta name="application-name" content="RIRI" />
+  <meta name="apple-mobile-web-app-title" content="IRI Redirector (RIRI)" />
+  <title>IRI Redirector (RIRI)</title>
+  <link rel="manifest" href="assets/manifest.json"/>
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/pico.css"/>
+  <link rel="icon" href="assets/favicon.ico" />
 
 </head>
 
 <body>
-  <div class="pa4-l">
-  <form class="bg-light-blue mw7 center pa4 br2-ns ba b--black-10" action="/" method="post">
-    <fieldset class="cf bn ma0 pa0">
-      <legend class="pa0 f5 f4-ns mb3 black-80">Save your URL in the form field below</legend>
-      <div class="cf">
-        <label class="clip" for="urls">URLs to save</label>
-        <input class="f6 f5-l input-reset bn fl black-80 bg-white pa3 lh-solid w-90 w-75-m w-80-l br2-ns br--left-ns" placeholder="URLs to save" type="url" name="urls" value="{{.}}" id="urls">
-        <button onclick="copyToClipboard();" class="f6 f5-l button-reset fl pv3 tc bn bg-animate dim bg-white dark-blue pointer w-90 w-25-m w-20-l br2-ns br--right-ns">📋</button>
-        <input class="f6 f5-l button-reset fl pv3 tc bn bg-animate bg-black-70 hover-bg-black white pointer w-90 w-25-m w-20-l br2-ns br--right-ns" type="submit" value="Save">
-      </div>
+  <main class="container">
+    <fieldset>
+      <section>
+        <label for="iri-to">
+          Forward to IRI
+          <input id="new-iri" type="url" name="iri-to" placeholder="ex. https://gimli.cip.li/x/foobar" aria-invalid="false"/>
+        </label>
+        <label for="iri-from">
+          Forward from IRI
+          <input type="url" name="iri-from" placeholder="generated on create" disabled/>
+        </label>
+        <button
+          onClick='updateMapping("", document.getElementById("new-iri").value);'>
+          Create
+        </button>
+      </section>
+      <section>
+        {{range $mapping := . }}
+        <label for="{{ $mapping.ToIri }}">
+          Forward to IRI
+          <input id="{{ $mapping.FromIri }}" type="url" name="iri-to" value="{{ $mapping.ToIri }}" aria-invalid="false"/>
+        </label>
+        <label for="{{ $mapping.FromIri }}">
+          Forward from IRI
+          <input type="url" name="iri-from" value="{{ $mapping.FromIri }}" readonly/>
+        </label>
+        <button
+          onClick='updateMapping("{{ $mapping.FromIri }}", document.getElementById("{{ $mapping.FromIri }}").value);'>
+          Update
+        </button>
+        {{ end }}
+      </section>
     </fieldset>
-  </form>
-</div>
-<script type="text/javascript">
- function copyToClipboard() {
-  navigator.clipboard.writeText("{{.}}").then(function() {
-      console.log("copy success")
-  }, function(e) {
-      console.error("copy failed: ", e)
-  });
- };
-</script>
+  </main>
 </body>
+
+<script type="text/javascript">
+function updateMapping(fromIri, toIri) {
+  var xhttp = new XMLHttpRequest();
+  xhttp.open("PATCH", "/api/v1/mappings", true);
+  xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhttp.send("fromIri=" + fromIri + "&toIri=" + toIri);
+};
+</script>
 
 </html>

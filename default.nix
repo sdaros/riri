@@ -3,10 +3,10 @@
 }:
 
 let
-  name = "urlshare";
-  version = "0.1.0";
-  description = "Simple URL sharing";
-  homepage = "https://urls.cip.li";
+  name = "riri";
+  version = "1.0.0";
+  description = "IRI Redictor for all the stuff";
+  homepage = "https://riri.cip.li";
   inherit (pkgs) buildGoModule;
   inherit (pkgs.lib) licenses maintainers platforms;
 in buildGoModule {

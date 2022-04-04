@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="24.024197mm"
+   height="20.893978mm"
+   viewBox="0 0 24.024197 20.893978"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.44191179"
+     inkscape:cx="22.62895"
+     inkscape:cy="224.02661"
+     inkscape:window-width="1114"
+     inkscape:window-height="700"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <rect
+       x="183.45898"
+       y="329.10974"
+       width="147.66435"
+       height="116.44794"
+       id="rect6633" />
+  </defs>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-56.285061,-89.426354)">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.2645836,0,-9.2382432e-5)"
+       id="text6631"
+       style="font-size:40px;line-height:1.25;font-family:sans-serif;word-spacing:0px;white-space:pre;shape-inside:url(#rect6633);fill:#4d4d4d"
+       x="48.974609"
+       y="0"><tspan
+         x="209.37094"
+         y="365.50937"
+         id="tspan25632"><tspan
+           style="font-family:'FiraMono Nerd Font Mono';-inkscape-font-specification:'FiraMono Nerd Font Mono';text-align:center;text-anchor:middle"
+           id="tspan25630">HTTP
+</tspan></tspan><tspan
+         x="221.35096"
+         y="416.51874"
+         id="tspan25636"><tspan
+           style="font-family:'FiraMono Nerd Font Mono';-inkscape-font-specification:'FiraMono Nerd Font Mono';text-align:center;text-anchor:middle"
+           id="tspan25634">307</tspan></tspan></text>
+  </g>
+</svg>
