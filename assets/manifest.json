@@ -6,7 +6,7 @@
   "display": "fullscreen",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/admin",
   "icons": [
     {
       "src": "logo-192.png",
