@@ -35,16 +35,16 @@
       </section>
       <section>
         {{range $mapping := . }}
-        <label for="{{ $mapping.ToIri }}">
+        <label for="{{ $mapping.To }}">
           Forward to IRI
-          <input id="{{ $mapping.FromIri }}" type="url" name="iri-to" value="{{ $mapping.ToIri }}" aria-invalid="false"/>
+          <input id="{{ $mapping.From }}" type="url" name="iri-to" value="{{ $mapping.To }}" aria-invalid="false"/>
         </label>
-        <label for="{{ $mapping.FromIri }}">
+        <label for="{{ $mapping.From }}">
           Forward from IRI
-          <input type="url" name="iri-from" value="{{ $mapping.FromIri }}" readonly/>
+          <input type="url" name="iri-from" value="{{ $mapping.From }}" readonly/>
         </label>
         <button
-          onClick='updateMapping("{{ $mapping.FromIri }}", document.getElementById("{{ $mapping.FromIri }}").value);'>
+          onClick='updateMapping("{{ $mapping.From }}", document.getElementById("{{ $mapping.From }}").value);'>
           Update
         </button>
         {{ end }}
@@ -58,7 +58,7 @@ function updateMapping(fromIri, toIri) {
   var xhttp = new XMLHttpRequest();
   xhttp.open("PATCH", "/api/v1/mappings", true);
   xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  xhttp.send("fromIri=" + fromIri + "&toIri=" + toIri);
+  xhttp.send("fromIri=" + encodeURIComponent(fromIri) + "&toIri=" + encodeURIComponent(toIri));
 };
 </script>
 

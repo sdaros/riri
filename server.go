@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 
@@ -14,25 +15,11 @@ import (
 var addr = flag.String("addr", ":8080", "http service address")
 
 type Mapping struct {
-	FromIri string
-	ToIri   string
+	From string
+	To   *url.URL
 }
-type apiHandlerV1 struct {
-	path    string
-	baseIri string
-	create  func(string, string, *bolt.DB) error
-	db      *bolt.DB
-}
-type adminHandlerV1 struct {
-	path  string
-	fetch func(string, *bolt.DB) ([]*Mapping, error)
-	db    *bolt.DB
-}
-type appHandlerV1 struct {
-	path    string
-	baseIri string
-	fetch   func(string, *bolt.DB) ([]*Mapping, error)
-	db      *bolt.DB
+type App struct {
+	db *bolt.DB
 }
 
 func main() {
@@ -42,61 +29,21 @@ func main() {
 		log.Fatal("BoltDB: ", err)
 	}
 	defer db.Close()
+
+	app := &App{db}
 	mux := http.NewServeMux()
-	baseIriV1 := "https://riri.cip.li"
-
-	apiV1 := &apiHandlerV1{path: "/api/v1/mappings", baseIri: baseIriV1, create: createV1, db: db}
-	mux.Handle(apiV1.path, apiV1)
-
-	adminV1 := &adminHandlerV1{path: "/admin", fetch: fetchV1, db: db}
-	mux.Handle(adminV1.path, adminV1)
-
-	appV1 := &appHandlerV1{path: "/_/", baseIri: baseIriV1, fetch: fetchV1, db: db}
-	mux.Handle(appV1.path, appV1)
-
-	mux.HandleFunc("/assets/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.Method + " " + r.URL.String())
-		base := filepath.Base(r.URL.Path)
-		http.ServeFile(w, r, filepath.Join("assets", base))
-	})
-
+	mux.HandleFunc("/api/v1/mappings", app.apiHandler)
+	mux.HandleFunc("/admin", app.adminHandler)
+	mux.HandleFunc("/assets/", app.assetsHandler)
+	mux.HandleFunc("/", app.rootHandler)
 	server := &http.Server{Addr: *addr, Handler: mux}
 	err = server.ListenAndServe()
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
-func (h *apiHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method + " " + r.URL.String())
 
-	switch r.Method {
-	case "PATCH":
-		fromIri := r.FormValue("fromIri")
-		toIri := r.FormValue("toIri")
-		if toIri == "" {
-			http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
-			return
-		}
-		// Create new mapping if fromIri is empty
-		if fromIri == "" {
-			if err := h.create(h.baseIri, toIri, h.db); err != nil {
-				log.Printf("Error adding new mapping to DB: %v", err)
-				http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
-				return
-			}
-			return
-		}
-		if err := updateMapping(h.db, fromIri, toIri); err != nil {
-			log.Printf("Error updating DB: %v", err)
-			http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
-			return
-		}
-	default:
-		http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
-		return
-	}
-}
-func (h *adminHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (a *App) adminHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.Method + " " + r.URL.String())
 
 	tmpl, err := template.ParseFiles("index.html")
@@ -107,7 +54,7 @@ func (h *adminHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		result, err := h.fetch("", h.db)
+		result, err := fetch("", a.db)
 		if err != nil {
 			log.Printf("Error fetching from DB: %v", err)
 			http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
@@ -120,12 +67,13 @@ func (h *adminHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-func (h *appHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+func (a *App) rootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.Method + " " + r.URL.String())
 
 	switch r.Method {
 	case "GET":
-		result, err := h.fetch(h.baseIri+r.URL.String(), h.db)
+		result, err := fetch(filepath.Base(r.URL.EscapedPath()), a.db)
 		if err != nil {
 			log.Printf("Error fetching from DB: %v", err)
 			http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
@@ -135,12 +83,119 @@ func (h *appHandlerV1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		http.Redirect(w, r, result[0].ToIri, http.StatusTemporaryRedirect)
+		// Append Query Values from request to URL Query from result
+		queryValuesFromRequest := r.URL.Query()
+		queryValuesFromResult := result[0].To.Query()
+		for k, v := range queryValuesFromRequest {
+			for i := 0; i < len(v); i++ {
+				queryValuesFromResult.Add(k, v[i])
+			}
+		}
+		result[0].To.RawQuery = queryValuesFromResult.Encode()
+		http.Redirect(w, r, result[0].To.String(), http.StatusTemporaryRedirect)
 	default:
 		http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
 		return
 	}
 }
+
+func (a *App) apiHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.Method + " " + r.URL.String())
+
+	switch r.Method {
+	case "PATCH":
+		toIriUnescaped, err := url.QueryUnescape(r.FormValue("toIri"))
+		if err != nil {
+			log.Printf("Error trying to unescape `to IRI` field: %v", err)
+			http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
+			return
+		}
+		toIri, err := url.Parse(toIriUnescaped)
+		if err != nil {
+			log.Printf("Error trying to parse `to IRI` field: %v", err)
+			http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
+			return
+		}
+		if toIri.String() == "" {
+			http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
+			return
+		}
+		// Create new mapping if fromIri is empty
+		if r.FormValue("fromIri") == "" {
+			if err := create(toIri, a.db); err != nil {
+				log.Printf("Error adding new mapping to DB: %v", err)
+				http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+		if err := updateMapping(a.db, r.FormValue("fromIri"), toIri); err != nil {
+			log.Printf("Error updating DB: %v", err)
+			http.Error(w, "Whoops! Our bad", http.StatusInternalServerError)
+			return
+		}
+	default:
+		http.Error(w, "That's not how you use this service :-)", http.StatusBadRequest)
+		return
+	}
+}
+
+func (a *App) assetsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.Method + " " + r.URL.String())
+	base := filepath.Base(r.URL.Path)
+	http.ServeFile(w, r, filepath.Join("assets", base))
+}
+
+func fetch(key string, db *bolt.DB) ([]*Mapping, error) {
+	var result []*Mapping
+	err := db.View(func(tx *bolt.Tx) error {
+		riris := tx.Bucket([]byte("riris"))
+		if key != "" {
+			v := riris.Get([]byte(key))
+			if len(v) > 0 {
+				toUrl, err := url.Parse(string(v[:]))
+				if err != nil {
+					return err
+				}
+				result = append(result, &Mapping{key, toUrl})
+			}
+			return nil
+		}
+		c := riris.Cursor()
+		for k, v := c.Last(); k != nil; k, v = c.Prev() {
+			toUrl, err := url.Parse(string(v[:]))
+			if err != nil {
+				return err
+			}
+			result = append(result, &Mapping{string(k[:]), toUrl})
+		}
+		return nil
+	})
+	return result, err
+}
+func create(value *url.URL, db *bolt.DB) error {
+	err := db.Update(func(tx *bolt.Tx) error {
+		riris := tx.Bucket([]byte("riris"))
+		id, _ := riris.NextSequence()
+		key := strconv.FormatUint(id, 10)
+		if err := riris.Put([]byte(key), []byte(value.String())); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+func updateMapping(db *bolt.DB, key string, value *url.URL) error {
+	err := db.Update(func(tx *bolt.Tx) error {
+		riris := tx.Bucket([]byte("riris"))
+		if err := riris.Put([]byte(key), []byte(value.String())); err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
+}
+
 func initDB(pathToDB string) (*bolt.DB, error) {
 	db, err := bolt.Open(pathToDB, 0600, nil)
 	if err != nil {
@@ -157,46 +212,4 @@ func initDB(pathToDB string) (*bolt.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-func fetchV1(key string, db *bolt.DB) ([]*Mapping, error) {
-	var result []*Mapping
-	err := db.View(func(tx *bolt.Tx) error {
-		riris := tx.Bucket([]byte("riris"))
-		if key != "" {
-			v := riris.Get([]byte(key))
-			if len(v) > 0 {
-				result = append(result, &Mapping{key, string(v[:])})
-			}
-			return nil
-		}
-		c := riris.Cursor()
-		for k, v := c.Last(); k != nil; k, v = c.Prev() {
-			result = append(result, &Mapping{string(k[:]), string(v[:])})
-		}
-		return nil
-	})
-	return result, err
-}
-func createV1(baseIri, value string, db *bolt.DB) error {
-	err := db.Update(func(tx *bolt.Tx) error {
-		riris := tx.Bucket([]byte("riris"))
-		id, _ := riris.NextSequence()
-		// Example of a key:  https://riri.cip.li/_/1
-		key := baseIri + "/_/" + strconv.FormatUint(id, 16)
-		if err := riris.Put([]byte(key), []byte(value)); err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
-}
-func updateMapping(db *bolt.DB, key, value string) error {
-	err := db.Update(func(tx *bolt.Tx) error {
-		riris := tx.Bucket([]byte("riris"))
-		if err := riris.Put([]byte(key), []byte(value)); err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
 }
